@@ -26,7 +26,8 @@
   --chip:#222c29; --tab:#101614; --nav:#161d1b; color-scheme:dark;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;overflow-x:hidden}
-.app,.card,.today{min-width:0;max-width:100%}
+[hidden]{display:none!important}
+.app,.card,.tcard{min-width:0;max-width:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.5;
   padding-block:0 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .app{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:16px}
@@ -38,17 +39,17 @@ h2{margin:0;font-size:18px;font-weight:700}
 .sec-h svg{width:22px;height:22px;flex:none}
 
 /* today card */
-.today{border-radius:30px;padding:22px;color:#fff;display:flex;flex-direction:column;gap:12px}
-.today.work{background:var(--work);color:var(--work-fg)}
-.today.off{background:var(--off)}
-.today.hol{background:var(--hol)}
-.today .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.today .lbl{font-size:15px;opacity:.85}
-.today .big{font-size:32px;font-weight:800;line-height:1.2}
-.today .dt{font-size:17px;opacity:.9}
-.today hr{border:0;border-top:1px solid currentColor;opacity:.3;margin:4px 0 0}
-.today .nxt{font-size:17px}
-.today svg{width:44px;height:44px;flex:none}
+.tcard{border-radius:30px;padding:22px;color:#fff;display:flex;flex-direction:column;gap:12px}
+.tcard.work{background:var(--work);color:var(--work-fg)}
+.tcard.off{background:var(--off)}
+.tcard.hol{background:var(--hol)}
+.tcard .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tcard .lbl{font-size:15px;opacity:.85}
+.tcard .big{font-size:32px;font-weight:800;line-height:1.2}
+.tcard .dt{font-size:17px;opacity:.9}
+.tcard hr{border:0;border-top:1px solid currentColor;opacity:.3;margin:4px 0 0}
+.tcard .nxt{font-size:17px}
+.tcard svg{width:44px;height:44px;flex:none}
 
 /* calendar */
 .cal-h{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;margin-bottom:8px}
@@ -58,7 +59,7 @@ h2{margin:0;font-size:18px;font-weight:700}
 .todaybtn{display:block;margin:0 auto 10px;color:var(--muted);font-size:14px;padding:4px 12px;border-radius:12px}
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .dow{text-align:center;color:var(--muted);font-size:14px;padding:6px 0}
-.d{width:100%;min-width:0;aspect-ratio:1/1.2;border-radius:16px;background:var(--cell);display:grid;place-items:center;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;border:2px solid transparent}
+.d{position:relative;cursor:pointer;width:100%;min-width:0;aspect-ratio:1/1.2;border-radius:16px;background:var(--cell);display:grid;place-items:center;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;border:2px solid transparent}
 .d.work{background:var(--work);color:var(--work-fg);font-weight:800}
 .d.hol{background:var(--hol);color:#fff;font-weight:800}
 .d.today{border-color:var(--fg);box-shadow:inset 0 0 0 2px var(--bg)}
@@ -138,6 +139,15 @@ h2{margin:0;font-size:18px;font-weight:700}
 .toast{position:fixed;inset:auto 0 calc(92px + env(safe-area-inset-bottom,0px)) 0;margin:0 auto;width:max-content;max-width:90%;background:var(--fg);color:var(--bg);
   border-radius:16px;padding:12px 20px;z-index:15;font-weight:700}
 @media (prefers-reduced-motion: no-preference){.alarm{animation:pop .3s ease-out}@keyframes pop{from{transform:translateY(-20px);opacity:0}}}
+.d.ov::after{content:"";position:absolute;top:7px;inset-inline-end:7px;width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.75}
+.sheet-bg{position:fixed;inset:0;background:#000a;z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);border-radius:26px 26px 0 0;width:100%;max-width:480px;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.sheet h3{margin:0;font-size:21px}
+.sheet .sub{color:var(--muted);margin:0 0 4px}
+.sheet button{border-radius:16px;padding:15px;font-size:18px;font-weight:700;background:var(--chip);text-align:center}
+.sheet button.wk{background:var(--work);color:var(--work-fg)}
+.sheet button.of{background:var(--off);color:#fff}
+.sheet button.hl{background:var(--hol);color:#fff}
 </style>
 
 </head>
@@ -149,6 +159,7 @@ h2{margin:0;font-size:18px;font-weight:700}
   <button id="t-set" aria-label="الإعدادات"></button>
 </div></nav>
 <div id="alarm" class="alarm" hidden dir="rtl"></div>
+<div id="sheet" class="sheet-bg" hidden dir="rtl"><div class="sheet" id="sh-b"></div></div>
 <div id="toast" class="toast" hidden dir="rtl"></div>
 
 <script>
@@ -156,6 +167,7 @@ h2{margin:0;font-size:18px;font-weight:700}
 var MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 var DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 var DOW_SHORT=['أحد','اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+var OFF_TIMES=['16:00','17:00','18:00','19:00','20:00','21:00'];
 var TIMES=['05:00','06:00','07:00','08:00','09:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'];
 
 var ic={
@@ -174,9 +186,10 @@ var ic={
 };
 
 /* ---------- state ---------- */
-var DEF={work:1,off:3,start:'2026-11-03',holidays:['2026-10-11','2026-10-12','2026-10-13'],alarm:true,time:'14:00'};
+var DEF={work:1,off:3,start:'2026-11-03',holidays:['2026-10-11','2026-10-12','2026-10-13'],alarm:true,time:'14:00',over:{},starts:null,offAlarm:true,offTime:'18:00'};
 var S=load();
-function load(){try{var r=JSON.parse(localStorage.getItem('dawami')||'null');if(r)return Object.assign({},DEF,r)}catch(e){}return JSON.parse(JSON.stringify(DEF))}
+function load(){var s;try{var r=JSON.parse(localStorage.getItem('dawami')||'null');if(r)s=Object.assign({},DEF,r)}catch(e){}
+  if(!s)s=JSON.parse(JSON.stringify(DEF));if(!s.starts)s.starts=[s.start];if(!s.over)s.over={};return s}
 function save(){try{localStorage.setItem('dawami',JSON.stringify(S))}catch(e){}}
 var tab='cal', view=new Date(), draft=null, fired={};
 view=new Date(view.getFullYear(),view.getMonth(),1);
@@ -189,8 +202,11 @@ function parse(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
 function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n)}
 function fmt(d){return DAYS[d.getDay()]+'، '+d.getDate()+' '+MONTHS[d.getMonth()]}
 function type(d){
-  if(S.holidays.indexOf(key(d))>-1)return 'hol';
-  var cyc=S.work+S.off, diff=num(d)-num(parse(S.start));
+  var k=key(d);
+  if(S.over[k])return S.over[k];
+  if(S.holidays.indexOf(k)>-1)return 'hol';
+  var st=S.starts[0];for(var i=0;i<S.starts.length;i++){if(S.starts[i]<=k)st=S.starts[i]}
+  var cyc=S.work+S.off, diff=num(d)-num(parse(st));
   var m=((diff%cyc)+cyc)%cyc;
   return m<S.work?'work':'off';
 }
@@ -212,7 +228,7 @@ function todayCard(){
   var sub;
   if(t==='work'){var o=nextOf(now,'off',60);sub=o?'تبدأ الإجازة '+tomorrowCount(o.n):''}
   else{var w=nextOf(now,'work',400);sub=w?'يبدأ العمل '+tomorrowCount(w.n):'لا توجد أيام دوام قادمة'}
-  return '<section class="today '+cls+'"><div class="row"><div><div class="lbl">اليوم</div></div></div>'+
+  return '<section class="tcard '+cls+'"><div class="row"><div><div class="lbl">اليوم</div></div></div>'+
     '<div class="row"><div class="big">'+label+'</div>'+(t==='work'?ic.bag:t==='off'?ic.cup:ic.party)+'</div>'+
     '<div class="dt">'+fmt(now)+'</div><hr><div class="nxt">'+sub+'</div></section>';
 }
@@ -224,7 +240,7 @@ function viewCal(){
   var td=key(new Date()),wk=0,of=0,hl=0;
   for(var d=1;d<=dim;d++){var dt=new Date(y,m,d),t=type(dt);
     if(t==='work')wk++;else if(t==='off')of++;else hl++;
-    h+='<div class="d '+(t==='off'?'':t)+(key(dt)===td?' today':'')+'">'+d+'</div>';}
+    var kk=key(dt);h+='<button class="d '+(t==='off'?'':t)+(kk===td?' today':'')+(S.over[kk]?' ov':'')+'" data-day="'+kk+'">'+d+'</button>';}
   h+='</div>';
   var ups=upcoming('work',8).map(function(d){return '<div class="it"><span class="pill">'+DAYS[d.getDay()]+'</span><div class="tx"><div class="a">'+fmt(d)+'</div><div class="b">يوم دوام</div></div><span class="dot" style="background:var(--gold)"></span></div>'}).join('');
   return todayCard()+
@@ -240,10 +256,13 @@ function viewCal(){
 function viewBell(){
   var chips=TIMES.map(function(t){return '<button class="chip" data-time="'+t+'" aria-pressed="'+(S.time===t)+'">'+t+'</button>'}).join('');
   var w=upcoming('work',8).map(function(d){return '<div class="it"><span class="check">'+ic.ok+'</span><div class="tx"><div class="a">'+fmt(d)+'</div><div class="b">منبه الساعة '+S.time+'</div></div><span class="dot" style="background:var(--gold)"></span></div>'}).join('');
-  var o=upcoming('off',5).map(function(d){return '<div class="it"><div class="tx"><div class="a">'+fmt(d)+'</div><div class="b">إجازة</div></div><span class="dot" style="background:var(--off)"></span></div>'}).join('');
+  var o=upcoming('off',6).map(function(d){var last=type(addDays(d,1))==='work';return '<div class="it"><div class="tx"><div class="a">'+fmt(d)+'</div><div class="b">'+(last?'آخر يوم إجازة · منبه '+S.offTime:'إجازة')+'</div></div><span class="dot" style="background:var(--off)"></span></div>'}).join('');
   var perm='';try{if(S.alarm&&'Notification' in window&&Notification.permission==='default')perm='<button class="btn ghost" data-perm>السماح بإشعارات المتصفح</button>'}catch(e){}
   return '<section class="card"><div class="head"><div class="ico">'+ic.bell+'</div><div class="tt"><b>منبه أيام العمل</b><small>'+(S.alarm?'مفعّل':'متوقف')+'</small></div>'+
    '<button class="switch" role="switch" aria-checked="'+S.alarm+'" aria-label="تفعيل المنبه" data-toggle></button></div></section>'+
+  '<section class="card"><div class="head"><div class="ico" style="background:#dcf5e6;color:#2f8f5f">'+ic.cup+'</div><div class="tt"><b>منبه آخر يوم إجازة</b><small>'+(S.offAlarm?'مفعّل':'متوقف')+' · ينبهك مساء آخر يوم قبل الدوام</small></div>'+
+   '<button class="switch" role="switch" aria-checked="'+S.offAlarm+'" aria-label="تفعيل منبه آخر يوم إجازة" data-toggle-off></button></div>'+
+   '<div class="chips" style="margin-top:14px">'+OFF_TIMES.map(function(t){return '<button class="chip" data-offtime="'+t+'" aria-pressed="'+(S.offTime===t)+'">'+t+'</button>'}).join('')+'</div></section>'+
   '<section class="card"><div class="sec-h"><span>'+ic.clock+'</span><h2>وقت المنبه</h2></div><div class="chips">'+chips+'</div>'+perm+
    '<button class="btn ghost" data-test>تجربة المنبه</button>'+
    '<p class="hint">يرن المنبه في أيام الدوام فقط، ويعمل والتطبيق مفتوح على الشاشة.</p></section>'+
@@ -276,7 +295,10 @@ function bind(){
   a.querySelectorAll('[data-time]').forEach(function(b){b.onclick=function(){S.time=b.dataset.time;save();fired={};render()}});
   a.querySelectorAll('[data-toggle]').forEach(function(b){b.onclick=function(){S.alarm=!S.alarm;save();render();if(S.alarm)askPerm()}});
   a.querySelectorAll('[data-perm]').forEach(function(b){b.onclick=function(){askPerm(true)}});
-  a.querySelectorAll('[data-test]').forEach(function(b){b.onclick=function(){ring('هذا تجريب للمنبه',true)}});
+  a.querySelectorAll('[data-test]').forEach(function(b){b.onclick=function(){ring('هذا تجريب للمنبه')}});
+  a.querySelectorAll('[data-toggle-off]').forEach(function(b){b.onclick=function(){S.offAlarm=!S.offAlarm;save();render();if(S.offAlarm)askPerm()}});
+  a.querySelectorAll('[data-offtime]').forEach(function(b){b.onclick=function(){S.offTime=b.dataset.offtime;save();fired={};render()}});
+  a.querySelectorAll('[data-day]').forEach(function(b){b.onclick=function(){openSheet(b.dataset.day)}});
   a.querySelectorAll('[data-step]').forEach(function(b){b.onclick=function(){var k=b.dataset.step;draft[k]=Math.max(1,Math.min(14,draft[k]+(+b.dataset.v)));render()}});
   a.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){draft.holidays=draft.holidays.filter(function(x){return x!==b.dataset.del});render()}});
   var st=$('start');if(st)st.onchange=function(){if(st.value)draft.start=st.value};
@@ -287,11 +309,29 @@ function bind(){
       if(draft.holidays.indexOf(v)<0)draft.holidays.push(v);render()}}});
   a.querySelectorAll('[data-save]').forEach(function(b){b.onclick=function(){
     var st2=$('start');if(st2&&st2.value)draft.start=st2.value;
-    S.work=draft.work;S.off=draft.off;S.start=draft.start;S.holidays=draft.holidays.slice();save();draft=null;toast('تم حفظ الإعدادات');tab='cal';render();window.scrollTo(0,0)}});
+    var chg=draft.work!==S.work||draft.off!==S.off||draft.start!==S.start;S.work=draft.work;S.off=draft.off;S.start=draft.start;S.holidays=draft.holidays.slice();if(chg)S.starts=[draft.start];save();draft=null;toast('تم حفظ الإعدادات');tab='cal';render();window.scrollTo(0,0)}});
 }
 ['cal','bell','set'].forEach(function(t){$('t-'+t).onclick=function(){if(t!=='set')draft=null;tab=t;render();window.scrollTo(0,0)}});
 
 var tt;function toast(m){var e=$('toast');e.textContent=m;e.hidden=false;clearTimeout(tt);tt=setTimeout(function(){e.hidden=true},2200)}
+
+var shKey=null;
+function openSheet(k){shKey=k;var d=parse(k),t=type(d),nm={work:'يوم دوام',off:'يوم إجازة',hol:'عطلة'};
+  $('sh-b').innerHTML='<h3>'+fmt(d)+'</h3><p class="sub">الحالي: '+nm[t]+(S.over[k]?' (معدّل يدويًا)':'')+'</p>'+
+   '<button class="wk" data-set="work">اجعله يوم دوام</button><button class="of" data-set="off">اجعله يوم إجازة</button><button class="hl" data-set="hol">اجعله عطلة</button>'+
+   '<button data-restart>ابدأ الدورة من هذا اليوم</button>'+(S.over[k]?'<button data-reset>إرجاعه لجدول الدورة</button>':'')+'<button data-close>إغلاق</button>';
+  $('sheet').hidden=false}
+function closeSheet(){$('sheet').hidden=true}
+$('sheet').onclick=function(e){var b=e.target.closest?e.target.closest('button'):null;
+  if(e.target===this||(b&&b.hasAttribute('data-close'))){closeSheet();return}
+  if(!b)return;
+  if(b.hasAttribute('data-set')){S.over[shKey]=b.getAttribute('data-set');save();closeSheet();render();toast('تم التعديل');return}
+  if(b.hasAttribute('data-reset')){delete S.over[shKey];save();closeSheet();render();toast('رجع لجدول الدورة');return}
+  if(b.hasAttribute('data-restart')){
+    Object.keys(S.over).forEach(function(x){if(x>=shKey)delete S.over[x]});
+    S.starts=S.starts.filter(function(x){return x<shKey});S.starts.push(shKey);S.start=shKey;
+    save();closeSheet();render();toast('الدورة تبدأ من هذا اليوم')}
+};
 
 /* ---------- alarm ---------- */
 function askPerm(showMsg){try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission().then(function(){render()}).catch(function(){})}catch(e){}}
@@ -299,15 +339,17 @@ function beep(){try{var C=window.AudioContext||window.webkitAudioContext,c=new C
   (function go(){if(n++>5)return;var o=c.createOscillator(),g=c.createGain();o.frequency.value=n%2?880:660;o.connect(g);g.connect(c.destination);
     g.gain.setValueAtTime(.25,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.4);o.start();o.stop(c.currentTime+.4);setTimeout(go,500)})()}catch(e){}
   try{if(navigator.vibrate)navigator.vibrate([300,150,300])}catch(e){}}
-function ring(msg,test){
-  var a=$('alarm');a.innerHTML='<span style="width:30px;height:30px;display:block;flex:none">'+ic.bell+'</span><div style="flex:1"><b>'+msg+'</b><span>'+fmt(new Date())+' · '+S.time+'</span></div><button id="stop">إيقاف</button>';
+function ring(msg,t){
+  var a=$('alarm');a.innerHTML='<span style="width:30px;height:30px;display:block;flex:none">'+ic.bell+'</span><div style="flex:1"><b>'+msg+'</b><span>'+fmt(new Date())+' · '+(t||S.time)+'</span></div><button id="stop">إيقاف</button>';
   a.hidden=false;$('stop').onclick=function(){a.hidden=true};beep();
   try{if('Notification' in window&&Notification.permission==='granted')new Notification('دوامي',{body:msg})}catch(e){}
 }
+function due(n,hhmm,tag){var p=hhmm.split(':'),at=new Date(n.getFullYear(),n.getMonth(),n.getDate(),+p[0],+p[1]),k=tag+key(n)+hhmm;
+  if(n-at>=0&&n-at<3600e3&&!fired[k]){fired[k]=1;return true}return false}
 function tick(){
-  if(!S.alarm)return;var n=new Date();if(type(n)!=='work')return;
-  var p=S.time.split(':'),at=new Date(n.getFullYear(),n.getMonth(),n.getDate(),+p[0],+p[1]),diff=n-at,k=key(n)+S.time;
-  if(diff>=0&&diff<3600e3&&!fired[k]){fired[k]=1;ring('اليوم يوم دوام')}
+  var n=new Date(),t=type(n);
+  if(S.alarm&&t==='work'&&due(n,S.time,'w'))ring('اليوم يوم دوام');
+  if(S.offAlarm&&t!=='work'&&type(addDays(n,1))==='work'&&due(n,S.offTime,'o'))ring('غدًا يبدأ دوامك',S.offTime);
 }
 setInterval(tick,20000);tick();
 render();
